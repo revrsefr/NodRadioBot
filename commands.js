@@ -1,12 +1,14 @@
 const adminManager = require('./adminManager');
 const djCommands = require('./djCommands');
-const config = require('./config'); 
-let currentDJNick = null;
+const config = require('./config');
+const { getInstance } = require('./botInstanceManager');
 
-function processCommand(event, reply) {
+let currentDJNick = null; 
+
+function processCommand(event, reply, botInstance) {
     const fullHostmask = `${event.nick}!${event.ident}@${event.hostname}`;
     const messageParts = event.message.split(' ');
-    console.log("Processing command:", messageParts[0]);
+    console.log("Procesando comando:", messageParts[0]);
 
     // Comandos
     switch (messageParts[0]) {
@@ -38,6 +40,9 @@ function processCommand(event, reply) {
             break;
         case '!radio':
             handleRadioCommand(event, reply);
+            break;
+        case '!song':
+            handleSongRequest(messageParts.slice(1), event, reply);
             break;
         default:
             reply(event.target, `Comando desconocido: ${event.message}`);
@@ -81,6 +86,9 @@ function processAdminCommands(messageParts, hostmask, event, reply) {
             break;
         case '!radio':
             handleRadioCommand(event, reply);
+            break;
+        case '!song':
+            handleSongRequest(messageParts.slice(1), event, reply);
             break;
     }
 }
@@ -289,9 +297,35 @@ function checkDJStatus(event, reply) {
 function handleRadioCommand(event, reply) {
     const djCommands = require('./djCommands'); // Ensure this is also correctly imported if needed here
     const djNick = djCommands.getCurrentDJNick() || 'no DJ currently';
-    const message = `Hi, come listen to our DJs at ${config.radioUrl}. The actual DJ online is ${djNick}!`;
+    const message = `Hola, ven a escuchar a nuestros DJs aqui: ${config.radioUrl}. El/la DJ actual es ${djNick}!`;
     reply(event.target, message);
 }
+
+function handleSongRequest(songParts, event, reply) {
+    const botInstance = getInstance();
+    if (!botInstance) {
+        reply(event.target, "Error: la instancia del bot no está disponible.");
+        return;
+    }
+
+    const djCommands = require('./djCommands');
+    if (djCommands.isDJInSession()) {
+        const songRequest = songParts.join(' ');
+        const currentDJ = djCommands.getCurrentDJNick(); // Ensure this method correctly retrieves the DJ's nickname
+
+        if (currentDJ) {
+            const requestMessage = `${event.nick} ha hecho el siguiente pedido: ${songRequest}`;
+            // Correct method to send a private message using irc-framework
+            botInstance.say(currentDJ, requestMessage);
+            reply(event.target, `Tu petición '${songRequest}' ha sido enviada al DJ.`);
+        } else {
+            reply(event.target, "No hay ningún DJ en línea actualmente.");
+        }
+    } else {
+        reply(event.target, "Actualmente no hay ninguna sesión de DJ activa.");
+    }
+}
+
 
 function isValidHostmask(hostmask) {
     // SACA EL USER Y HOSTMASK DE LAS LISTAS

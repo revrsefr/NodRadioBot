@@ -53,7 +53,7 @@ function handleDJOff(event, reply, customMessage) {
         currentDJNick = null;  // Clear the current DJ's nickname
         reply(event.target, 'La sesión de DJ terminó. ¡Gracias por tu sesión!');
     } else {
-        reply(event.target, 'Actualmente no hay ninguna sesión de DJ ONLINE.');
+        reply(event.target, 'Actualmente no hay ningun@ DJ ONLINE.');
     }
 }
 

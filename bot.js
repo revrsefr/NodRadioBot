@@ -3,6 +3,7 @@ const config = require('./config');
 const commands = require('./commands');
 const adminManager = require('./adminManager');  // Ensure this module is implemented correctly
 const djCommands = require('./djCommands'); // Import djCommands.js
+const botInstanceManager = require('./botInstanceManager');
 
 
 
@@ -10,6 +11,8 @@ djCommands.setConfig(config);
 
 
 const bot = new Irc.Client();
+botInstanceManager.setInstance(bot);
+
 
 bot.connect({
     host: config.server,
@@ -45,7 +48,7 @@ bot.on('message', (event) => {
             } else {
                 console.error('El mensaje no está definido.', event.target);
             }
-        });
+        },bot);
     }
 });
 
