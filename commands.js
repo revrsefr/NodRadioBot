@@ -1,9 +1,12 @@
 const adminManager = require('./adminManager');
 const djCommands = require('./djCommands');
+const config = require('./config'); 
+let currentDJNick = null;
 
 function processCommand(event, reply) {
     const fullHostmask = `${event.nick}!${event.ident}@${event.hostname}`;
     const messageParts = event.message.split(' ');
+    console.log("Processing command:", messageParts[0]);
 
     // Comandos
     switch (messageParts[0]) {
@@ -32,6 +35,9 @@ function processCommand(event, reply) {
             break;
         case '!dj':
             checkDJStatus(event, reply);
+            break;
+        case '!radio':
+            handleRadioCommand(event, reply);
             break;
         default:
             reply(event.target, `Comando desconocido: ${event.message}`);
@@ -72,6 +78,9 @@ function processAdminCommands(messageParts, hostmask, event, reply) {
             break;
         case '!dj':
             checkDJStatus(event, reply);
+            break;
+        case '!radio':
+            handleRadioCommand(event, reply);
             break;
     }
 }
@@ -277,7 +286,12 @@ function checkDJStatus(event, reply) {
     }
 }
 
-
+function handleRadioCommand(event, reply) {
+    const djCommands = require('./djCommands'); // Ensure this is also correctly imported if needed here
+    const djNick = djCommands.getCurrentDJNick() || 'no DJ currently';
+    const message = `Hi, come listen to our DJs at ${config.radioUrl}. The actual DJ online is ${djNick}!`;
+    reply(event.target, message);
+}
 
 function isValidHostmask(hostmask) {
     // SACA EL USER Y HOSTMASK DE LAS LISTAS
@@ -285,7 +299,18 @@ function isValidHostmask(hostmask) {
     return regex.test(hostmask);
 }
 
+
+function setCurrentDJNick(nick) {
+    currentDJNick = nick; // Provide a way to update the DJ's nickname
+}
+
+function getCurrentDJNick() {
+    return currentDJNick; // Return the current DJ's nickname
+}
+
 module.exports = {
-    processCommand
+    processCommand,
+    getCurrentDJNick,
+    setCurrentDJNick
 };
 

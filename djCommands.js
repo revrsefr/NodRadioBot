@@ -1,7 +1,9 @@
+
 // djCommands.js
 let config; 
 let isDJInSession = false;
 let botInstance;
+let currentDJNick = null; 
 
 
 function setBot(bot) {
@@ -60,5 +62,5 @@ module.exports = {
     setBot,
     setConfig,
     isDJInSession: () => isDJInSession,  // Export as a getter if encapsulation is needed
-    getCurrentDJNick: () => currentDJNick 
+    getCurrentDJNick: () => currentDJNick
 };
