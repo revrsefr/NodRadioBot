@@ -4,6 +4,7 @@ const config = require('./config');
 const { getInstance } = require('./botInstanceManager');
 
 let currentDJNick = null; 
+const lastSongRequestTimes = new Map();
 
 function processCommand(event, reply, botInstance) {
     const fullHostmask = `${event.nick}!${event.ident}@${event.hostname}`;
@@ -22,9 +23,6 @@ function processCommand(event, reply, botInstance) {
         case '!list-admins':
         case '!list-djs':
         case '!list-vips':
-        case '!djon':
-        case '!djoff':
-            djCommands.processDJCommands(messageParts, fullHostmask, event, reply);
             adminManager.isAdmin(fullHostmask, (err, isAdm) => {
                 if (err) {
                     reply(event.target, `Error al comprobar el estado del administrador: ${err.message}`);
@@ -35,6 +33,10 @@ function processCommand(event, reply, botInstance) {
                 }
             });
             break;
+        case '!djon':
+        case '!djoff':
+             djCommands.processDJCommands(messageParts, fullHostmask, event, reply);
+             break;
         case '!dj':
             checkDJStatus(event, reply);
             break;
@@ -302,29 +304,37 @@ function handleRadioCommand(event, reply) {
 }
 
 function handleSongRequest(songParts, event, reply) {
-    const botInstance = getInstance();
-    if (!botInstance) {
-        reply(event.target, "Error: la instancia del bot no está disponible.");
+    const userId = `${event.nick}!${event.ident}@${event.hostname}`; // Unique identifier for each user
+    const currentTime = Date.now();
+    const cooldownPeriod = 300000; // 5 minutes in milliseconds
+
+    if (lastSongRequestTimes.has(userId) && currentTime - lastSongRequestTimes.get(userId) < cooldownPeriod) {
+        const remainingTime = Math.round((cooldownPeriod - (currentTime - lastSongRequestTimes.get(userId))) / 1000);
+        reply(event.target, `Por favor espera <${remainingTime}> segundos para pedir otro tema.`);
         return;
     }
 
+    // Update the last request time
+    lastSongRequestTimes.set(userId, currentTime);
+
+    // Continue with processing the song request
+    const songRequest = songParts.join(' ');
     const djCommands = require('./djCommands');
     if (djCommands.isDJInSession()) {
-        const songRequest = songParts.join(' ');
-        const currentDJ = djCommands.getCurrentDJNick(); // Ensure this method correctly retrieves the DJ's nickname
-
+        const currentDJ = djCommands.getCurrentDJNick();
         if (currentDJ) {
-            const requestMessage = `${event.nick} ha hecho el siguiente pedido: ${songRequest}`;
-            // Correct method to send a private message using irc-framework
+            const requestMessage = `Has recibido un pedido de ${event.nick}, quiere el tema: ${songRequest}`;
+            const botInstance = require('./botInstanceManager').getInstance();
             botInstance.say(currentDJ, requestMessage);
-            reply(event.target, `Tu petición '${songRequest}' ha sido enviada al DJ.`);
+            reply(event.target, `Tu pedido ha sido procesado '${songRequest}' enviando al DJ ...done`);
         } else {
-            reply(event.target, "No hay ningún DJ en línea actualmente.");
+            reply(event.target, "No hay DJ avtivo.");
         }
     } else {
-        reply(event.target, "Actualmente no hay ninguna sesión de DJ activa.");
+        reply(event.target, "Actualmente, no hay DJ activo.");
     }
 }
+
 
 
 function isValidHostmask(hostmask) {
