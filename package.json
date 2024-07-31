@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "fast-xml-parser": "^4.3.6",
+    "fast-xml-parser": "^4.4.1",
     "irc-framework": "^4.13.1",
     "node-fetch": "^3.3.2",
     "sqlite3": "^5.1.7"
